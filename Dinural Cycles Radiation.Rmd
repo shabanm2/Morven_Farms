@@ -1,0 +1,250 @@
+---
+title: "DinuralCycles"
+author: "Juliana Cerny"
+date: '2023-02-05'
+output: html_document
+---
+
+# use summer2022.csv
+
+load data and change variable names 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+library(lubridate)
+library(ggpubr)
+library(RColorBrewer)
+
+setwd("C:/Users/julia/OneDrive/Documents/Morven/Summer 2022/")
+
+summer2022<-read.csv("summer2022.csv")
+
+summer2022<-rename(summer2022,
+                   A.airtemp="Temperature..RXW.THC.20778368.20779618.1....F..UVA.ARC.1",
+                   A.windspeed= "Wind.Speed..RXW.WCF.20778368.20735930.1...mph..UVA.ARC.1",
+                   A.winddirection="Wind.Direction..RXW.WCF.20778368.20735930.3......UVA.ARC.1",
+                   B.soilmoist="Water.Content..S.SMC.20778368.20773519.1...m.3.m.3..UVA.ARC.1",
+                   B.soiltemp="Temperature..S.TMB.20778368.20770097.1....F..UVA.ARC.1",
+                   B.airtemp="Temperature..S.THB.20778368.20777744.1....F..UVA.ARC.1",
+                   B.rad="Solar.Radiation..S.LIB.20778368.20779676.1...W.m.2..UVA.ARC.1",
+                   B.windspeed="Wind.Speed..S.WSB.20778368.20779920.1...mph..UVA.ARC.1",
+                   B.winddirection="Wind.Direction..S.WDA.20778368.20774023.1......UVA.ARC.1",
+                   C.airtemp="Temperature..RXW.THC.20778368.20780856.1....F..UVA.ARC.1",
+                   C.windspeed="Wind.Speed..RXW.WCF.20778368.20735931.1...mph..UVA.ARC.1",
+                   C.winddirection="Wind.Direction..RXW.WCF.20778368.20735931.3......UVA.ARC.1",
+                   D.airtemp="Temperature..RXW.THC.20778368.20778336.1....F..UVA.ARC.1",
+                   D.windspeed="Wind.Speed..RXW.WCF.20778368.20779630.1...mph..UVA.ARC.1",
+                   D.winddirection="Wind.Direction..RXW.WCF.20778368.20779630.3......UVA.ARC.1",
+                   D.rad="Solar.Radiation..RXW.LIB.20778368.20735864.1...W.m.2..UVA.ARC.1.SR_E6",
+                   F.airtemp="Temperature..RXW.THC.20778368.20778338.1....F..UVA.ARC.1",
+                   E.soiltemp="Temperature..RXW.TMB.20778368.20776843.1....F..UVA.ARC.1",
+                   E.airtemp="Temperature..RXW.THC.20778368.20780852.1....F..UVA.ARC.1",
+                   E.rad="Solar.Radiation..RXW.LIB.20778368.20748041.1...W.m.2..UVA.ARC.1.SR_G6",
+                   E.windspeed="Wind.Speed..RXW.WCF.20778368.20779625.1...mph..UVA.ARC.1",
+                   E.winddirection="Wind.Direction..RXW.WCF.20778368.20779625.3......UVA.ARC.1",
+                   F.windspeed="Wind.Speed..RXW.WCF.20778368.20779627.1...mph..UVA.ARC.1",
+                   F.winddirection="Wind.Direction..RXW.WCF.20778368.20779627.3......UVA.ARC.1",
+                   F.rad="Solar.Radiation..RXW.LIB.20778368.20779612.1...W.m.2..UVA.ARC.1",
+                   G.airtemp="Temperature..RXW.THC.20778368.20779619.1....F..UVA.ARC.1",
+                   G.windspeed="Wind.Speed..RXW.WCF.20778368.20779626.1...mph..UVA.ARC.1",
+                   G.winddirection="Wind.Direction..RXW.WCF.20778368.20779626.3......UVA.ARC.1",
+                   G.rad="Solar.Radiation..RXW.LIB.20778368.20735865.1...W.m.2..UVA.ARC.1.SR_G5",
+                   N.airtemp="Temperature..RXW.THC.20778368.20780854.1....F..UVA.ARC.1",
+                   N.windspeed="Wind.Speed..RXW.WCF.20778368.20779624.1...mph..UVA.ARC.1",
+                   N.winddirection="Wind.Direction..RXW.WCF.20778368.20779624.3......UVA.ARC.1",
+                   N.rad="Solar.Radiation..RXW.LIB.20778368.20735863.1...W.m.2..UVA.ARC.1.SR_B4")
+```
+
+
+
+converting all variables to numeric and removing commas from radiation vectors
+```{r}
+summer2022$Date<-as.POSIXct(summer2022$Date,format="%m/%d/%Y %H:%M",tz="UTC")
+
+summer2022$B.rad<-as.numeric(gsub(",","",summer2022$B.rad))
+summer2022$D.rad<-as.numeric(gsub(",","",summer2022$D.rad))
+summer2022$E.rad<-as.numeric(gsub(",","",summer2022$E.rad))
+summer2022$F.rad<-as.numeric(gsub(",","",summer2022$F.rad))
+summer2022$G.rad<-as.numeric(gsub(",","",summer2022$G.rad))
+summer2022$N.rad<-as.numeric(gsub(",","",summer2022$N.rad))
+
+summer2022$B.rad<-as.numeric(summer2022$B.rad)
+summer2022$D.rad<-as.numeric(summer2022$D.rad)
+summer2022$E.rad<-as.numeric(summer2022$E.rad)
+summer2022$F.rad<-as.numeric(summer2022$F.rad)
+summer2022$G.rad<-as.numeric(summer2022$G.rad)
+summer2022$N.rad<-as.numeric(summer2022$N.rad)
+```
+
+
+separate variables into new dataframes
+```{r}
+Airtemp<-summer2022[ , c("Date","A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp")]
+
+Radiation<-summer2022[ , c("Date","B.rad","D.rad","E.rad","F.rad","G.rad","N.rad")]%>%
+  replace_with_na(replace=list(D.rad=-888.88))
+```
+
+
+
+
+```{r}
+Rad.means.hourly<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>% 
+  summarise_if(is.numeric, mean)
+
+Rad.means.daily<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="day")))%>%
+  group_by(Date) %>% 
+  summarise_if(is.numeric, mean)
+
+
+Airtemp.means.hourly<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>% 
+  summarise_if(is.numeric, mean)
+
+Airtemp.means.daily<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="day")))%>%
+  group_by(Date) %>% 
+  summarise_if(is.numeric, mean)
+
+
+# means for each sensors, mean and SD across all sensors
+Airtemp.hourly<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  mutate(SD = sd(unlist(select(cur_data(), 1:8))))%>%
+  mutate(Mean= mean(unlist(select(cur_data(), 1:8))))%>%
+  summarise_if(is.numeric, mean)
+
+```
+
+
+plot theme
+```{r}
+theme_xangle<-theme_bw() + 
+  theme(title = element_text(size=20),
+        axis.text = element_text(size = 14), 
+        axis.title = element_text(size = 18), 
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        axis.text.x = element_text(angle = 30, vjust = 1, hjust=1))
+```
+
+
+
+
+
+Airtemp Hourly Means 6/19/2022 - 6/24/2022
+```{r}
+Airtemp<-summer2022[ , c("Date","A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp")]
+
+
+Airtemp.hourly.means<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  summarise_if(is.numeric, mean)
+
+Airtemp.hourly.sd<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 1:8)))))%>%
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 1:8)))))%>%
+  summarise_if(is.numeric, mean)
+
+datebreaks<-seq.POSIXt(as.POSIXct("2022-06-19 00:00:00"),as.POSIXct("2022-06-24 23:00:00"),by="12 hours")
+
+Airtemp.hourly.means<-melt(Airtemp.hourly.means,id.vars="Date",variable.name="Sensor")
+
+ggplot()+
+  geom_line(data=Airtemp.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_point(data=Airtemp.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_errorbar(data=Airtemp.hourly.sd, aes(x=Date,ymin=Mean-SD, ymax=Mean+SD),  position=position_dodge(.9))+
+  geom_point(data=Airtemp.hourly.sd, aes(x=Date,y=Mean))+
+  scale_x_datetime(breaks=datebreaks)+
+  xlim(as.POSIXct("2022-06-19 00:00:00"),as.POSIXct("2022-06-24 23:00:00"))+
+  labs(title="ARC 1 Hourly Air Temperature (F) June 19-24, 2022",x="Date",y="Air Temperature (deg F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  theme_xangle
+
+```
+
+
+
+
+Radiation Hourly Means 6/19/2022 - 6/24/2022
+```{r}
+Radiation<-summer2022[ , c("Date","B.rad","D.rad","E.rad","F.rad","G.rad","N.rad")]%>%
+  replace_with_na(replace=list(D.rad=-888.88))
+
+
+Radiation.hourly.means<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  summarise_if(is.numeric, mean)
+
+Radiation.hourly.sd<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 1:6)))))%>%
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 1:6)))))%>%
+  summarise_if(is.numeric, mean)
+
+datebreaks<-seq.POSIXt(as.POSIXct("2022-06-19 00:00:00"),as.POSIXct("2022-06-24 23:00:00"),by="12 hours")
+
+Radiation.hourly.means<-melt(Radiation.hourly.means,id.vars="Date",variable.name="Sensor")
+
+ggplot()+
+  geom_line(data=Radiation.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_point(data=Radiation.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_errorbar(data=Radiation.hourly.sd, aes(x=Date,ymin=Mean-SD, ymax=Mean+SD),  position=position_dodge(.9))+
+  geom_point(data=Radiation.hourly.sd, aes(x=Date,y=Mean))+
+  scale_x_datetime(breaks=datebreaks)+
+  xlim(as.POSIXct("2022-06-19 00:00:00"),as.POSIXct("2022-06-24 23:00:00"))+
+  labs(title="ARC 1 Hourly Solar Radiation (W/m^2) June 19-24, 2022",x="Date",y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  theme_xangle
+
+```
+
+
+
+Radiation Hourly Means June-July
+```{r}
+Radiation<-summer2022[ , c("Date","B.rad","D.rad","E.rad","F.rad","G.rad","N.rad")]%>%
+  replace_with_na(replace=list(D.rad=-888.88))
+
+
+Radiation.hourly.means<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  summarise_if(is.numeric, mean)
+
+Radiation.hourly.sd<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 1:6)))))%>%
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 1:6)))))%>%
+  summarise_if(is.numeric, mean)
+
+datebreaks<-seq.POSIXt(as.POSIXct("2022-06-01 00:00:00"),as.POSIXct("2022-07-31 23:00:00"),by="2 days")
+
+Radiation.hourly.means<-melt(Radiation.hourly.means,id.vars="Date",variable.name="Sensor")
+
+ggplot()+
+  geom_line(data=Radiation.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_point(data=Radiation.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_errorbar(data=Radiation.hourly.sd, aes(x=Date,ymin=Mean-SD, ymax=Mean+SD),  position=position_dodge(.9))+
+  geom_point(data=Radiation.hourly.sd, aes(x=Date,y=Mean))+
+  scale_x_datetime(breaks=datebreaks)+
+  xlim(as.POSIXct("2022-06-01 00:00:00"),as.POSIXct("2022-07-31 23:00:00"))+
+  labs(title="ARC 1 Hourly Solar Radiation (W/m^2) Summer, 2022",x="Date",y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  theme_xangle
+
+```
