@@ -239,7 +239,7 @@ Radiation.hourly.means<-melt(Radiation.hourly.means,id.vars="Date",variable.name
 ggplot()+
   geom_line(data=Radiation.hourly.means, aes(Date,value,group=Sensor),color="gray")+
   geom_point(data=Radiation.hourly.means, aes(Date,value,group=Sensor),color="gray")+
-  geom_errorbar(data=Radiation.hourly.sd, aes(x=Date,ymin=Mean-SD, ymax=Mean+SD),  position=position_dodge(.9))+
+ # geom_errorbar(data=Radiation.hourly.sd, aes(x=Date,ymin=Mean-SD, ymax=Mean+SD),  position=position_dodge(.9))+
   geom_point(data=Radiation.hourly.sd, aes(x=Date,y=Mean))+
   scale_x_datetime(breaks=datebreaks)+
   xlim(as.POSIXct("2022-06-01 00:00:00"),as.POSIXct("2022-07-31 23:00:00"))+
