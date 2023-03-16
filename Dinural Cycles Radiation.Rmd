@@ -90,41 +90,6 @@ Radiation<-summer2022[ , c("Date","B.rad","D.rad","E.rad","F.rad","G.rad","N.rad
 
 
 
-
-```{r}
-Rad.means.hourly<-Radiation%>%
-  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
-  group_by(Date) %>% 
-  summarise_if(is.numeric, mean)
-
-Rad.means.daily<-Radiation%>%
-  mutate(Date=as.POSIXct(cut(Date,breaks="day")))%>%
-  group_by(Date) %>% 
-  summarise_if(is.numeric, mean)
-
-
-Airtemp.means.hourly<-Airtemp%>%
-  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
-  group_by(Date) %>% 
-  summarise_if(is.numeric, mean)
-
-Airtemp.means.daily<-Airtemp%>%
-  mutate(Date=as.POSIXct(cut(Date,breaks="day")))%>%
-  group_by(Date) %>% 
-  summarise_if(is.numeric, mean)
-
-
-# means for each sensors, mean and SD across all sensors
-Airtemp.hourly<-Airtemp%>%
-  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
-  group_by(Date) %>%
-  mutate(SD = sd(unlist(select(cur_data(), 1:8))))%>%
-  mutate(Mean= mean(unlist(select(cur_data(), 1:8))))%>%
-  summarise_if(is.numeric, mean)
-
-```
-
-
 plot theme
 ```{r}
 theme_xangle<-theme_bw() + 
@@ -246,5 +211,485 @@ ggplot()+
   labs(title="ARC 1 Hourly Solar Radiation (W/m^2) Summer, 2022",x="Date",y="Solar Radiation (W/m^2)")+
   theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
   theme_xangle
+  
+  
+  
+  
+### Air temp by hour over a week - june-aug 2022
+```{r fig1, fig.height=8, fig.width=20}
+png("C:/Users/julia/OneDrive/Documents/Morven/Summer 2022/Diurnal Plots/Airtemp.diurnal.summer.png",width=800,height=400)
+
+Airtemp<-summer2022[ , c("Date","A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp")]
+
+
+Airtemp.hourly.means<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Date,Day,Hour) %>%
+  summarise_if(is.numeric, mean)
+
+Airtemp.hourly.sd<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Hour) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 3:9)))))%>%
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 3:9)))))%>%
+  summarise_if(is.numeric, mean)
+
+
+Airtemp.hourly.means<-Airtemp.hourly.means%>%pivot_longer(cols=c("B.airtemp","C.airtemp","D.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"),names_to="Sensor",values_to="value")
+
+Airtemp.hourly.sd<-Airtemp.hourly.sd%>%pivot_longer(cols=c("B.airtemp","C.airtemp","D.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"),names_to="Sensor",values_to="value")
+
+ggplot(data=Airtemp.hourly.sd)+
+  geom_point(aes(x=Hour,y=value,color=Sensor))+
+  geom_line(aes(x=Hour,y=value,color=Sensor,group=Sensor))+
+  labs(title="ARC 1 Mean Hourly Air Temperature (F) June 1 - Aug 31, 2022",x="24 Hour Cycle",y="Air Temperature (deg F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B.airtemp"="gold1","C.airtemp"="red","D.airtemp"="darkorchid3","E.airtemp"="navy","F.airtemp"="maroon","G.airtemp"="limegreen","N.airtemp"="darkgreen"))+
+  theme1
+dev.off()
+```
+
+### Radiation by hour over a week - june-aug 2022
+```{r fig1, fig.height=8, fig.width=20}
+png("C:/Users/julia/OneDrive/Documents/Morven/Summer 2022/Diurnal Plots/Radiation.diurnal.summer.png",width=800,height=400)
+
+# remove A,c,D
+Radiation<-summer2022[ , c("Date","B.rad","E.rad","F.rad","G.rad","N.rad")]
+
+Radiation.hourly.means<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Date,Day,Hour) %>%
+  summarise_if(is.numeric, mean)
+
+Radiation.hourly.sd<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Hour) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 2:6)))))%>% # change columns selected
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 2:6)))))%>%
+  summarise_if(is.numeric, mean)
+
+# remove A and C
+Radiation.hourly.means<-Radiation.hourly.means%>%pivot_longer(cols=c("B.rad","E.rad","F.rad","G.rad","N.rad"),names_to="Sensor",values_to="value")
+
+Radiation.hourly.sd<-Radiation.hourly.sd%>%pivot_longer(cols=c("B.rad","E.rad","F.rad","G.rad","N.rad"),names_to="Sensor",values_to="value")
+
+ggplot(data=Radiation.hourly.sd)+
+  geom_point(aes(x=Hour,y=value,color=Sensor))+
+  geom_line(aes(x=Hour,y=value,color=Sensor,group=Sensor))+
+  labs(title="ARC 1 Mean Hourly Solar Radiation (W/m^2) June 1 - Aug 31, 2022",x="24 Hour Cycle",y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B.rad"="gold1","C.rad"="red","D.rad"="darkorchid3","E.rad"="navy","F.rad"="maroon","G.rad"="limegreen","N.rad"="darkgreen"))+
+  theme1
+dev.off()
+```
+### Air temp by hour over a week - june 17-24 2022
+```{r fig1, fig.height=8, fig.width=20}
+png("C:/Users/julia/OneDrive/Documents/Morven/Summer 2022/Diurnal Plots/Airtemp.diurnal.jun17_14.png",width=800,height=400)
+
+Airtemp<-summer2022[ , c("Date","A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp")]%>%
+   filter(Date > "2022-06-17 00:00:00" & Date <"2022-06-24 23:55:00")
+
+
+Airtemp.hourly.means<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Date,Day,Hour) %>%
+  summarise_if(is.numeric, mean)
+
+Airtemp.hourly.sd<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Hour) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 3:9)))))%>%
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 3:9)))))%>%
+  summarise_if(is.numeric, mean)
+
+
+Airtemp.hourly.means<-Airtemp.hourly.means%>%pivot_longer(cols=c("B.airtemp","C.airtemp","D.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"),names_to="Sensor",values_to="value")
+
+Airtemp.hourly.sd<-Airtemp.hourly.sd%>%pivot_longer(cols=c("B.airtemp","C.airtemp","D.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"),names_to="Sensor",values_to="value")
+
+ggplot(data=Airtemp.hourly.sd)+
+  geom_point(aes(x=Hour,y=value,color=Sensor))+
+  geom_line(aes(x=Hour,y=value,color=Sensor,group=Sensor))+
+  labs(title="ARC 1 Mean Hourly Air Temperature (F) June 1 - Aug 31, 2022",x="24 Hour Cycle",y="Air Temperature (deg F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B.airtemp"="gold1","C.airtemp"="red","D.airtemp"="darkorchid3","E.airtemp"="navy","F.airtemp"="maroon","G.airtemp"="limegreen","N.airtemp"="darkgreen"))+
+  theme1
+dev.off()
+```
+
+
+### Radiation by hour over a week - june 17-24 2022
+```{r fig1, fig.height=8, fig.width=20}
+png("C:/Users/julia/OneDrive/Documents/Morven/Summer 2022/Diurnal Plots/Radiation.diurnal.jun17_14.png",width=800,height=400)
+
+# remove A,c,D
+Radiation<-summer2022[ , c("Date","B.rad","E.rad","F.rad","G.rad","N.rad")]%>%
+   filter(Date > "2022-06-17 00:00:00" & Date <"2022-06-24 23:55:00")
+
+Radiation.hourly.means<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Date,Day,Hour) %>%
+  summarise_if(is.numeric, mean)
+
+Radiation.hourly.sd<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Hour) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 2:6)))))%>% # change columns selected
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 2:6)))))%>%
+  summarise_if(is.numeric, mean)
+
+# remove A and C
+Radiation.hourly.means<-Radiation.hourly.means%>%pivot_longer(cols=c("B.rad","E.rad","F.rad","G.rad","N.rad"),names_to="Sensor",values_to="value")
+
+Radiation.hourly.sd<-Radiation.hourly.sd%>%pivot_longer(cols=c("B.rad","E.rad","F.rad","G.rad","N.rad"),names_to="Sensor",values_to="value")
+
+ggplot(data=Radiation.hourly.sd)+
+  geom_point(aes(x=Hour,y=value,color=Sensor))+
+  geom_line(aes(x=Hour,y=value,color=Sensor,group=Sensor))+
+  labs(title="ARC 1 Mean Hourly Solar Radiation (W/m^2) June 1 - Aug 31, 2022",x="24 Hour Cycle",y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B.rad"="gold1","C.rad"="red","D.rad"="darkorchid3","E.rad"="navy","F.rad"="maroon","G.rad"="limegreen","N.rad"="darkgreen"))+
+  theme1
+dev.off()
+```
+
+
+Radiation Hourly Means 6/19/2022 - 6/24/2022
+```{r}
+Radiation<-summer2022[ , c("Date","B.rad","D.rad","E.rad","F.rad","G.rad","N.rad")]%>%
+  replace_with_na(replace=list(D.rad=-888.88))
+
+
+Radiation.hourly.means<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  summarise_if(is.numeric, mean)
+
+Radiation.hourly.sd<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 1:6)))))%>%
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 1:6)))))%>%
+  summarise_if(is.numeric, mean)
+
+datebreaks<-seq.POSIXt(as.POSIXct("2022-06-19 00:00:00"),as.POSIXct("2022-06-24 23:00:00"),by="12 hours")
+
+Radiation.hourly.means<-melt(Radiation.hourly.means,id.vars="Date",variable.name="Sensor")
+
+ggplot()+
+  geom_line(data=Radiation.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_point(data=Radiation.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_errorbar(data=Radiation.hourly.sd, aes(x=Date,ymin=Mean-SD, ymax=Mean+SD),  position=position_dodge(.9))+
+  geom_point(data=Radiation.hourly.sd, aes(x=Date,y=Mean))+
+  scale_x_datetime(breaks=datebreaks)+
+  xlim(as.POSIXct("2022-06-19 00:00:00"),as.POSIXct("2022-06-24 23:00:00"))+
+  labs(title="ARC 1 Hourly Solar Radiation (W/m^2) June 19-24, 2022",x="Date",y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  theme_xangle
+
+```
+
+
+
+Radiation Hourly Means June-July
+```{r}
+Radiation<-summer2022[ , c("Date","B.rad","D.rad","E.rad","F.rad","G.rad","N.rad")]%>%
+  replace_with_na(replace=list(D.rad=-888.88))
+
+
+Radiation.hourly.means<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  summarise_if(is.numeric, mean)
+
+Radiation.hourly.sd<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 1:6)))))%>%
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 1:6)))))%>%
+  summarise_if(is.numeric, mean)
+
+datebreaks<-seq.POSIXt(as.POSIXct("2022-06-01 00:00:00"),as.POSIXct("2022-07-31 23:00:00"),by="2 days")
+
+Radiation.hourly.means<-melt(Radiation.hourly.means,id.vars="Date",variable.name="Sensor")
+
+ggplot()+
+  geom_line(data=Radiation.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_point(data=Radiation.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_errorbar(data=Radiation.hourly.sd, aes(x=Date,ymin=Mean-SD, ymax=Mean+SD),  position=position_dodge(.9))+
+  geom_point(data=Radiation.hourly.sd, aes(x=Date,y=Mean))+
+  scale_x_datetime(breaks=datebreaks)+
+  xlim(as.POSIXct("2022-06-01 00:00:00"),as.POSIXct("2022-07-31 23:00:00"))+
+  labs(title="ARC 1 Hourly Solar Radiation (W/m^2) Summer, 2022",x="Date",y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  theme_xangle
+
+```
+
+
+
+########################################################################################
+
+### Fall Data
+```{r}
+
+fall2022<-read.csv("fall2022.csv")
+
+fall2022<-rename(fall2022,
+                   A.airtemp="Temperature..RXW.THC.20778368.20779618.1....F..UVA.ARC.1",
+                   B.airtemp="Temperature..S.THB.20778368.20777744.1....F..UVA.ARC.1",
+                   B.rad="Solar.Radiation..S.LIB.20778368.20779676.1...W.m.2..UVA.ARC.1",
+                   C.airtemp="Temperature..RXW.THC.20778368.20780856.1....F..UVA.ARC.1",
+                   D.airtemp="Temperature..RXW.THC.20778368.20778336.1....F..UVA.ARC.1",
+                   D.rad="Solar.Radiation..RXW.LIB.20778368.20735864.1...W.m.2..UVA.ARC.1.SR_E6",
+                   F.airtemp="Temperature..RXW.THC.20778368.20778338.1....F..UVA.ARC.1",
+                   E.airtemp="Temperature..RXW.THC.20778368.20780852.1....F..UVA.ARC.1",
+                   E.rad="Solar.Radiation..RXW.LIB.20778368.20748041.1...W.m.2..UVA.ARC.1.SR_G6",
+                   F.rad="Solar.Radiation..RXW.LIB.20778368.20779612.1...W.m.2..UVA.ARC.1",
+                   G.airtemp="Temperature..RXW.THC.20778368.20779619.1....F..UVA.ARC.1",
+                   G.rad="Solar.Radiation..RXW.LIB.20778368.20735865.1...W.m.2..UVA.ARC.1.SR_G5",
+                   N.airtemp="Temperature..RXW.THC.20778368.20780854.1....F..UVA.ARC.1",
+                   N.rad="Solar.Radiation..RXW.LIB.20778368.20735863.1...W.m.2..UVA.ARC.1.SR_B4")
+```
+
+
+
+
+converting all variables to numeric and removing commas from radiation vectors
+```{r}
+fall2022$Date<-as.POSIXct(fall2022$Date,format="%m/%d/%Y %H:%M",tz="UTC")
+
+fall2022$B.rad<-as.numeric(gsub(",","",fall2022$B.rad))
+fall2022$D.rad<-as.numeric(gsub(",","",fall2022$D.rad))
+fall2022$E.rad<-as.numeric(gsub(",","",fall2022$E.rad))
+fall2022$F.rad<-as.numeric(gsub(",","",fall2022$F.rad))
+fall2022$G.rad<-as.numeric(gsub(",","",fall2022$G.rad))
+fall2022$N.rad<-as.numeric(gsub(",","",fall2022$N.rad))
+
+fall2022$B.rad<-as.numeric(fall2022$B.rad)
+fall2022$D.rad<-as.numeric(fall2022$D.rad)
+fall2022$E.rad<-as.numeric(fall2022$E.rad)
+fall2022$F.rad<-as.numeric(fall2022$F.rad)
+fall2022$G.rad<-as.numeric(fall2022$G.rad)
+fall2022$N.rad<-as.numeric(fall2022$N.rad)
+```
+
+
+separate variables into new dataframes
+```{r}
+Airtemp<-fall2022[ , c("Date","A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp")]
+
+Radiation<-fall2022[ , c("Date","B.rad","D.rad","E.rad","F.rad","G.rad","N.rad")]%>%
+  replace_with_na(replace=list(D.rad=-888.88))
+```
+
+
+### Air temp by hour over a week
+```{r fig1, fig.height=8, fig.width=20}
+png("C:/Users/julia/OneDrive/Documents/Morven/Summer 2022/Diurnal Plots/Airtemp.diurnal.fall.png",width=800,height=400)
+
+Airtemp<-fall2022[ , c("Date","A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp")]
+
+
+Airtemp.hourly.means<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Date,Day,Hour) %>%
+  summarise_if(is.numeric, mean)
+
+Airtemp.hourly.sd<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Hour) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 3:9)))))%>%
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 3:9)))))%>%
+  summarise_if(is.numeric, mean)
+
+Airtemp.hourly.means<-Airtemp.hourly.means%>%pivot_longer(cols=c("B.airtemp","C.airtemp","D.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"),names_to="Sensor",values_to="value")
+
+Airtemp.hourly.sd<-Airtemp.hourly.sd%>%pivot_longer(cols=c("B.airtemp","C.airtemp","D.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"),names_to="Sensor",values_to="value")
+
+ggplot(data=Airtemp.hourly.sd)+
+  geom_point(aes(x=Hour,y=value,color=Sensor))+
+  geom_line(aes(x=Hour,y=value,color=Sensor,group=Sensor))+
+  labs(title="ARC 1 Mean Hourly Air Temperature (F) Sept 1 - Nov 30, 2022",x="24 Hour Cycle",y="Air Temperature (deg F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B.airtemp"="gold1","C.airtemp"="red","D.airtemp"="darkorchid3","E.airtemp"="navy","F.airtemp"="maroon","G.airtemp"="limegreen","N.airtemp"="darkgreen"))+
+  theme1
+dev.off()
+```
+
+### Radiation by hour over a week
+```{r fig1, fig.height=8, fig.width=20}
+png("C:/Users/julia/OneDrive/Documents/Morven/Summer 2022/Diurnal Plots/Radiation.diurnal.fall.png",width=800,height=400)
+
+# remove A,c,D
+Radiation<-fall2022[ , c("Date","B.rad","E.rad","F.rad","G.rad","N.rad")]
+
+Radiation.hourly.means<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Date,Day,Hour) %>%
+  summarise_if(is.numeric, mean)
+
+Radiation.hourly.sd<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Hour) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 2:6)))))%>% # change columns selected
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 2:6)))))%>%
+  summarise_if(is.numeric, mean)
+
+# remove A and C
+Radiation.hourly.means<-Radiation.hourly.means%>%pivot_longer(cols=c("B.rad","E.rad","F.rad","G.rad","N.rad"),names_to="Sensor",values_to="value")
+
+Radiation.hourly.sd<-Radiation.hourly.sd%>%pivot_longer(cols=c("B.rad","E.rad","F.rad","G.rad","N.rad"),names_to="Sensor",values_to="value")
+
+ggplot(data=Radiation.hourly.sd)+
+  geom_point(aes(x=Hour,y=value,color=Sensor))+
+  geom_line(aes(x=Hour,y=value,color=Sensor,group=Sensor))+
+  labs(title="ARC 1 Mean Hourly Solar Radiation (W/m^2) Sept 1 - Nov 30, 2022",x="24 Hour Cycle",y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B.rad"="gold1","C.rad"="red","D.rad"="darkorchid3","E.rad"="navy","F.rad"="maroon","G.rad"="limegreen","N.rad"="darkgreen"))+
+  theme1
+dev.off()
+```
+
+
+### Air temp by hour over a week - oct 17-24
+```{r fig1, fig.height=8, fig.width=20}
+png("C:/Users/julia/OneDrive/Documents/Morven/Summer 2022/Diurnal Plots/Airtemp.diurnal.oct17_24.png",width=800,height=400)
+
+Airtemp<-fall2022[ , c("Date","A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp")]%>%
+   filter(Date > "2022-10-17 00:00:00" & Date <"2022-10-24 23:55:00")
+
+
+Airtemp.hourly.means<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Date,Day,Hour) %>%
+  summarise_if(is.numeric, mean)
+
+Airtemp.hourly.sd<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Hour) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 3:9)))))%>%
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 3:9)))))%>%
+  summarise_if(is.numeric, mean)
+
+Airtemp.hourly.means<-Airtemp.hourly.means%>%pivot_longer(cols=c("B.airtemp","C.airtemp","D.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"),names_to="Sensor",values_to="value")
+
+Airtemp.hourly.sd<-Airtemp.hourly.sd%>%pivot_longer(cols=c("B.airtemp","C.airtemp","D.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"),names_to="Sensor",values_to="value")
+
+ggplot(data=Airtemp.hourly.sd)+
+  geom_point(aes(x=Hour,y=value,color=Sensor))+
+  geom_line(aes(x=Hour,y=value,color=Sensor,group=Sensor))+
+  labs(title="ARC 1 Mean Hourly Air Temperature (F) Oct 17-24, 2022",x="24 Hour Cycle",y="Air Temperature (deg F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B.airtemp"="gold1","C.airtemp"="red","D.airtemp"="darkorchid3","E.airtemp"="navy","F.airtemp"="maroon","G.airtemp"="limegreen","N.airtemp"="darkgreen"))+
+  theme1
+dev.off()
+```
+
+### Radiation by hour over a week - oct 17-24 
+```{r fig1, fig.height=8, fig.width=20}
+png("C:/Users/julia/OneDrive/Documents/Morven/Summer 2022/Diurnal Plots/Radiation.diurnal.oct17_24.png",width=800,height=400)
+
+# remove A,c,D
+Radiation<-fall2022[ , c("Date","B.rad","E.rad","F.rad","G.rad","N.rad")]%>%
+   filter(Date > "2022-10-17 00:00:00" & Date <"2022-10-24 23:55:00")
+
+Radiation.hourly.means<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Date,Day,Hour) %>%
+  summarise_if(is.numeric, mean)
+
+Radiation.hourly.sd<-Radiation%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  mutate(Day=as.Date(Date))%>%
+  mutate(Hour=format(as.POSIXct(Date),format="%H:%M"))%>%
+  group_by(Hour) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 2:6)))))%>% # change columns selected
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 2:6)))))%>%
+  summarise_if(is.numeric, mean)
+
+# remove A and C
+Radiation.hourly.means<-Radiation.hourly.means%>%pivot_longer(cols=c("B.rad","E.rad","F.rad","G.rad","N.rad"),names_to="Sensor",values_to="value")
+
+Radiation.hourly.sd<-Radiation.hourly.sd%>%pivot_longer(cols=c("B.rad","E.rad","F.rad","G.rad","N.rad"),names_to="Sensor",values_to="value")
+
+ggplot(data=Radiation.hourly.sd)+
+  geom_point(aes(x=Hour,y=value,color=Sensor))+
+  geom_line(aes(x=Hour,y=value,color=Sensor,group=Sensor))+
+  labs(title="ARC 1 Mean Hourly Solar Radiation (W/m^2) Oct 17-24, 2022",x="24 Hour Cycle",y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B.rad"="gold1","C.rad"="red","D.rad"="darkorchid3","E.rad"="navy","F.rad"="maroon","G.rad"="limegreen","N.rad"="darkgreen"))+
+  theme1
+dev.off()
+```
+
+
+
+
+Airtemp Hourly Means 6/19/2022 - 6/24/2022
+```{r}
+Airtemp<-fall2022[ , c("Date","A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp")]
+
+
+Airtemp.hourly.means<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  summarise_if(is.numeric, mean)
+
+Airtemp.hourly.sd<-Airtemp%>%
+  mutate(Date=as.POSIXct(cut(Date,breaks="hour")))%>%
+  group_by(Date) %>%
+  mutate(SD = sd(na.omit(unlist(select(cur_data(), 1:8)))))%>%
+  mutate(Mean= mean(na.omit(unlist(select(cur_data(), 1:8)))))%>%
+  summarise_if(is.numeric, mean)
+
+datebreaks<-seq.POSIXt(as.POSIXct("2022-09-01 00:00:00"),as.POSIXct("2022-11-30 23:00:00"),by="12 hours")
+
+Airtemp.hourly.means<-melt(Airtemp.hourly.means,id.vars="Date",variable.name="Sensor")
+
+ggplot()+
+  geom_line(data=Airtemp.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_point(data=Airtemp.hourly.means, aes(Date,value,group=Sensor),color="gray")+
+  geom_errorbar(data=Airtemp.hourly.sd, aes(x=Date,ymin=Mean-SD, ymax=Mean+SD),  position=position_dodge(.9))+
+  geom_point(data=Airtemp.hourly.sd, aes(x=Date,y=Mean))+
+  scale_x_datetime(breaks=datebreaks)+
+  xlim(as.POSIXct("2022-09-01 00:00:00"),as.POSIXct("2022-11-30 23:00:00"))+
+  labs(title="ARC 1 Hourly Air Temperature (F) Sept-Nov 2022",x="Date",y="Air Temperature (deg F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  theme_xangle
+
+```
+
+
 
 ```
