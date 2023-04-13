@@ -1,0 +1,609 @@
+---
+title: "XY Plots Dinural Cycles"
+author: "Juliana Cerny"
+date: '2023-03-27'
+output: html_document
+---
+
+# use summer2022.csv, fall2022.csv
+
+load data, change variable names, clean data, set up plot themes 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(reshape2)
+library(lubridate)
+library(ggpubr)
+library(RColorBrewer)
+library(naniar)
+library(ggpmisc) # https://cran.r-project.org/web/packages/ggpmisc/index.html 
+
+
+summer2022<-read.csv("C:/Users/julia/OneDrive/Documents/Morven/Diurnal Cycles/summer2022.csv")
+
+summer2022<-rename(summer2022,
+                   A.airtemp="Temperature..RXW.THC.20778368.20779618.1....F..UVA.ARC.1",
+                   A.windspeed= "Wind.Speed..RXW.WCF.20778368.20735930.1...mph..UVA.ARC.1",
+                   A.winddirection="Wind.Direction..RXW.WCF.20778368.20735930.3......UVA.ARC.1",
+                   B.soilmoist="Water.Content..S.SMC.20778368.20773519.1...m.3.m.3..UVA.ARC.1",
+                   B.soiltemp="Temperature..S.TMB.20778368.20770097.1....F..UVA.ARC.1",
+                   B.airtemp="Temperature..S.THB.20778368.20777744.1....F..UVA.ARC.1",
+                   B.rad="Solar.Radiation..S.LIB.20778368.20779676.1...W.m.2..UVA.ARC.1",
+                   B.windspeed="Wind.Speed..S.WSB.20778368.20779920.1...mph..UVA.ARC.1",
+                   B.winddirection="Wind.Direction..S.WDA.20778368.20774023.1......UVA.ARC.1",
+                   C.airtemp="Temperature..RXW.THC.20778368.20780856.1....F..UVA.ARC.1",
+                   C.windspeed="Wind.Speed..RXW.WCF.20778368.20735931.1...mph..UVA.ARC.1",
+                   C.winddirection="Wind.Direction..RXW.WCF.20778368.20735931.3......UVA.ARC.1",
+                   D.airtemp="Temperature..RXW.THC.20778368.20778336.1....F..UVA.ARC.1",
+                   D.windspeed="Wind.Speed..RXW.WCF.20778368.20779630.1...mph..UVA.ARC.1",
+                   D.winddirection="Wind.Direction..RXW.WCF.20778368.20779630.3......UVA.ARC.1",
+                   D.rad="Solar.Radiation..RXW.LIB.20778368.20735864.1...W.m.2..UVA.ARC.1.SR_E6",
+                   F.airtemp="Temperature..RXW.THC.20778368.20778338.1....F..UVA.ARC.1",
+                   E.soiltemp="Temperature..RXW.TMB.20778368.20776843.1....F..UVA.ARC.1",
+                   E.airtemp="Temperature..RXW.THC.20778368.20780852.1....F..UVA.ARC.1",
+                   E.rad="Solar.Radiation..RXW.LIB.20778368.20748041.1...W.m.2..UVA.ARC.1.SR_G6",
+                   E.windspeed="Wind.Speed..RXW.WCF.20778368.20779625.1...mph..UVA.ARC.1",
+                   E.winddirection="Wind.Direction..RXW.WCF.20778368.20779625.3......UVA.ARC.1",
+                   F.windspeed="Wind.Speed..RXW.WCF.20778368.20779627.1...mph..UVA.ARC.1",
+                   F.winddirection="Wind.Direction..RXW.WCF.20778368.20779627.3......UVA.ARC.1",
+                   F.rad="Solar.Radiation..RXW.LIB.20778368.20779612.1...W.m.2..UVA.ARC.1",
+                   G.airtemp="Temperature..RXW.THC.20778368.20779619.1....F..UVA.ARC.1",
+                   G.windspeed="Wind.Speed..RXW.WCF.20778368.20779626.1...mph..UVA.ARC.1",
+                   G.winddirection="Wind.Direction..RXW.WCF.20778368.20779626.3......UVA.ARC.1",
+                   G.rad="Solar.Radiation..RXW.LIB.20778368.20735865.1...W.m.2..UVA.ARC.1.SR_G5",
+                   N.airtemp="Temperature..RXW.THC.20778368.20780854.1....F..UVA.ARC.1",
+                   N.windspeed="Wind.Speed..RXW.WCF.20778368.20779624.1...mph..UVA.ARC.1",
+                   N.winddirection="Wind.Direction..RXW.WCF.20778368.20779624.3......UVA.ARC.1",
+                   N.rad="Solar.Radiation..RXW.LIB.20778368.20735863.1...W.m.2..UVA.ARC.1.SR_B4")
+
+
+
+# converting all variables to numeric and removing commas from radiation vectors
+
+summer2022$Date<-as.POSIXct(summer2022$Date,format="%m/%d/%Y %H",tz="UTC")
+
+summer2022$B.rad<-as.numeric(gsub(",","",summer2022$B.rad))
+summer2022$D.rad<-as.numeric(gsub(",","",summer2022$D.rad))
+summer2022$E.rad<-as.numeric(gsub(",","",summer2022$E.rad))
+summer2022$F.rad<-as.numeric(gsub(",","",summer2022$F.rad))
+summer2022$G.rad<-as.numeric(gsub(",","",summer2022$G.rad))
+summer2022$N.rad<-as.numeric(gsub(",","",summer2022$N.rad))
+
+summer2022$B.rad<-as.numeric(summer2022$B.rad)
+summer2022$D.rad<-as.numeric(summer2022$D.rad)
+summer2022$E.rad<-as.numeric(summer2022$E.rad)
+summer2022$F.rad<-as.numeric(summer2022$F.rad)
+summer2022$G.rad<-as.numeric(summer2022$G.rad)
+summer2022$N.rad<-as.numeric(summer2022$N.rad)
+
+#plot theme
+theme_xangle<-theme_bw() + 
+  theme(title = element_text(size=20),
+        axis.text = element_text(size = 14), 
+        axis.title = element_text(size = 18), 
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        axis.text.x = element_text(angle = 30, vjust = 1, hjust=1))
+
+theme1<-theme_bw()+
+  theme(title = element_text(size=20),
+        axis.text = element_text(size = 14), 
+        axis.title = element_text(size = 18), 
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        axis.text.x = element_text( vjust = 1, hjust=1))
+```
+
+wideframe to longframe data with just airtemp and radiation, 
+new column to label just by Sensor letter
+```{r}
+# grouped by hour
+summer2022$Date<-as.POSIXct(summer2022$Date,format="%m/%d/%Y %H",tz="UTC")
+
+# grouped by day
+summer2022daily<-summer2022%>%
+  mutate(Date=as.POSIXct(Date,format="%m/%d/%Y",tz="UTC"))
+
+Airtemp<-summer2022[ , c("Date","A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp")]%>%
+  group_by(Date)%>%
+  summarise(across(c("A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"), mean), .groups = 'drop') # mean of all measurements within each hour
+
+Airtemp.long<-Airtemp%>%
+  pivot_longer(cols=c("A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"),names_to="Sensor",values_to="Airtemp")%>%
+  mutate(Sensor=substr(Sensor,1L,1L)) # extract only letter of Sensor
+
+Radiation<-summer2022[ , c("Date","B.rad","D.rad","E.rad","F.rad","G.rad","N.rad")]%>%
+  replace_with_na(replace=list(D.rad=-888.88))%>%
+  group_by(Date)%>%
+  summarise(across(c("B.rad","D.rad","E.rad","F.rad","G.rad","N.rad"), mean), .groups = 'drop') # mean of all measurements within each hour
+
+Radiation.long<-Radiation%>%
+  pivot_longer(cols=c("B.rad","D.rad","E.rad","F.rad","G.rad","N.rad"),names_to="Sensor",values_to="Radiation")%>%
+  mutate(Sensor=substr(Sensor,1L,1L))
+
+Soiltemp<-summer2022[ , c("Date","B.soiltemp","E.soiltemp")]%>%
+  group_by(Date)%>%
+  summarise(across(c("B.soiltemp","E.soiltemp"), mean), .groups = 'drop')
+
+Soiltemp.long<-Soiltemp%>%
+  pivot_longer(cols=c("B.soiltemp","E.soiltemp"),names_to="Sensor",values_to="Soiltemp")%>%
+  mutate(Sensor=substr(Sensor,1L,1L))
+
+Rad.Airtemp<-inner_join(Airtemp.long,Radiation.long,by=c("Date"="Date","Sensor"="Sensor"))
+
+Soiltemp.Rad.Airtemp<-inner_join(Soiltemp.long,Rad.Airtemp,by=c("Date"="Date","Sensor"="Sensor"))
+
+```
+
+### Summer 
+
+Radiation vs air temp
+```{r}
+
+# locally weighted least squares regression (loess)
+ggplot(Rad.Airtemp,aes(x=Airtemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  geom_smooth(method = "loess", size=2)+
+  labs(title="Solar Radiation vs Air Temp LOESS June 1 - Aug 31, 2022", 
+       x= "Air Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+
+## gppmisc to add labels of regression line equation and R2
+# linear
+  ggplot(Rad.Airtemp,aes(x=Airtemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(size=2) +
+  stat_poly_eq(aes(label = paste(after_stat(eq.label),after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Solar Radiation vs Air Temp Linear Model, June 1 - Aug 31, 2022", 
+       x= "Air Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+  
+# quadratic
+ggplot(Rad.Airtemp,aes(x=Airtemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 2, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 2, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Solar Radiation vs Air Temp Quadratic Model, June 1 - Aug 31, 2022", 
+       x= "Air Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+# cubic
+ggplot(Rad.Airtemp,aes(x=Airtemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 3, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 3, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Solar Radiation vs Air Temp Cubic Model, June 1 - Aug 31, 2022", 
+       x= "Air Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+```
+<https://stackoverflow.com/questions/7549694/add-regression-line-equation-and-r2-on-graph>
+
+
+Soil temp vs air temp
+```{r}
+# locally weighted least squares regression (loess)
+ggplot(Soiltemp.Rad.Airtemp,aes(x=Airtemp,y=Soiltemp,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  geom_smooth(method = "loess", size=2)+
+  labs(title="Soil Temp vs Air Temp LOESS June 1 - Aug 31, 2022", 
+       x= "Air Temperature (F)", y="Soil Temperatre (F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+
+## gppmisc to add labels of regression line equation and R2
+# linear
+  ggplot(Soiltemp.Rad.Airtemp,aes(x=Airtemp,y=Soiltemp,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(size=2) +
+  stat_poly_eq(aes(label = paste(after_stat(eq.label),after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soil Temp vs Air Temp Linear Model, June 1 - Aug 31, 2022", 
+       x= "Air Temperature (F)", y="Soil Temperatre (F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+  
+# Quadratic
+ ggplot(Soiltemp.Rad.Airtemp,aes(x=Airtemp,y=Soiltemp,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 2, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 2, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soil Temp vs Air Temp Quadratic Model, June 1 - Aug 31, 2022", 
+       x= "Air Temperature (F)", y="Soil Temperatre (F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+# Cubic
+ ggplot(Soiltemp.Rad.Airtemp,aes(x=Airtemp,y=Soiltemp,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 3, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 3, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soil Temp vs Air Temp Cubic Model, June 1 - Aug 31, 2022", 
+       x= "Air Temperature (F)", y="Soil Temperatre (F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+```
+
+
+# Soil temp vs radiation
+```{r}
+
+# locally weighted least squares regression (loess)
+ggplot(Soiltemp.Rad.Airtemp,aes(x=Soiltemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  geom_smooth(method = "loess", size=2)+
+  labs(title="Soiltemp vs Radiation LOESS June 1 - Aug 31, 2022", 
+       x= "Soil Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+
+## gppmisc to add labels of regression line equation and R2
+# linear
+ggplot(Soiltemp.Rad.Airtemp,aes(x=Soiltemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(size=2) +
+  stat_poly_eq(aes(label = paste(after_stat(eq.label),after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soiltemp vs Radiation Linear Model, June 1 - Aug 31, 2022", 
+       x= "Soil Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+  
+# Quadratic
+ggplot(Soiltemp.Rad.Airtemp,aes(x=Soiltemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 2, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 2, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soiltemp vs Radiation Quadratic Model, June 1 - Aug 31, 2022", 
+       x= "Soil Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+# Cubic
+ggplot(Soiltemp.Rad.Airtemp,aes(x=Soiltemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 3, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 3, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soiltemp vs Radiation Cubic Model, June 1 - Aug 31, 2022", 
+       x= "Soil Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+```
+
+
+########################################################################################
+########################################################################################
+
+### Fall Data
+```{r}
+
+fall2022<-read.csv("C:/Users/julia/OneDrive/Documents/Morven/Diurnal Cycles/fall2022.csv")
+
+fall2022<-rename(fall2022,
+                   A.airtemp="Temperature..RXW.THC.20778368.20779618.1....F..UVA.ARC.1",
+                   B.airtemp="Temperature..S.THB.20778368.20777744.1....F..UVA.ARC.1",
+                   B.soiltemp="Temperature..S.TMB.20778368.20770097.1....F..UVA.ARC.1",
+                   B.rad="Solar.Radiation..S.LIB.20778368.20779676.1...W.m.2..UVA.ARC.1",
+                   C.airtemp="Temperature..RXW.THC.20778368.20780856.1....F..UVA.ARC.1",
+                   D.airtemp="Temperature..RXW.THC.20778368.20778336.1....F..UVA.ARC.1",
+                   D.rad="Solar.Radiation..RXW.LIB.20778368.20735864.1...W.m.2..UVA.ARC.1.SR_E6",
+                   F.airtemp="Temperature..RXW.THC.20778368.20778338.1....F..UVA.ARC.1",
+                   E.airtemp="Temperature..RXW.THC.20778368.20780852.1....F..UVA.ARC.1",
+                   E.rad="Solar.Radiation..RXW.LIB.20778368.20748041.1...W.m.2..UVA.ARC.1.SR_G6",
+                   E.soiltemp="Temperature..RXW.TMB.20778368.20776843.1....F..UVA.ARC.1",
+                   F.rad="Solar.Radiation..RXW.LIB.20778368.20779612.1...W.m.2..UVA.ARC.1",
+                   G.airtemp="Temperature..RXW.THC.20778368.20779619.1....F..UVA.ARC.1",
+                   G.rad="Solar.Radiation..RXW.LIB.20778368.20735865.1...W.m.2..UVA.ARC.1.SR_G5",
+                   N.airtemp="Temperature..RXW.THC.20778368.20780854.1....F..UVA.ARC.1",
+                   N.rad="Solar.Radiation..RXW.LIB.20778368.20735863.1...W.m.2..UVA.ARC.1.SR_B4")
+```
+
+
+
+converting all variables to numeric and removing commas from radiation vectors
+```{r}
+fall2022$Date<-as.POSIXct(fall2022$Date,format="%m/%d/%Y %H",tz="UTC")
+
+fall2022$B.rad<-as.numeric(gsub(",","",fall2022$B.rad))
+fall2022$D.rad<-as.numeric(gsub(",","",fall2022$D.rad))
+fall2022$E.rad<-as.numeric(gsub(",","",fall2022$E.rad))
+fall2022$F.rad<-as.numeric(gsub(",","",fall2022$F.rad))
+fall2022$G.rad<-as.numeric(gsub(",","",fall2022$G.rad))
+fall2022$N.rad<-as.numeric(gsub(",","",fall2022$N.rad))
+
+fall2022$B.rad<-as.numeric(fall2022$B.rad)
+fall2022$D.rad<-as.numeric(fall2022$D.rad)
+fall2022$E.rad<-as.numeric(fall2022$E.rad)
+fall2022$F.rad<-as.numeric(fall2022$F.rad)
+fall2022$G.rad<-as.numeric(fall2022$G.rad)
+fall2022$N.rad<-as.numeric(fall2022$N.rad)
+```
+
+
+separate variables into new dataframes
+```{r}
+# grouped by hour
+fall2022$Date<-as.POSIXct(fall2022$Date,format="%m/%d/%Y %H",tz="UTC")
+
+# grouped by day
+fall2022daily<-fall2022%>%
+  mutate(Date=as.POSIXct(Date,format="%m/%d/%Y",tz="UTC"))
+
+Airtemp<-fall2022[ , c("Date","A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp")]%>%
+  group_by(Date)%>%
+  summarise(across(c("A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"), mean), .groups = 'drop') # mean of all measurements within each hour
+
+Airtemp.long<-Airtemp%>%
+  pivot_longer(cols=c("A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"),names_to="Sensor",values_to="Airtemp")%>%
+  mutate(Sensor=substr(Sensor,1L,1L)) # extract only letter of Sensor
+
+Radiation<-fall2022[ , c("Date","B.rad","E.rad","F.rad","G.rad","N.rad")]%>%
+  group_by(Date)%>%
+  summarise(across(c("B.rad","E.rad","F.rad","G.rad","N.rad"), mean), .groups = 'drop') # mean of all measurements within each hour
+
+Radiation.long<-Radiation%>%
+  pivot_longer(cols=c("B.rad","E.rad","F.rad","G.rad","N.rad"),names_to="Sensor",values_to="Radiation")%>%
+  mutate(Sensor=substr(Sensor,1L,1L))
+
+Soiltemp<-fall2022[ , c("Date","B.soiltemp","E.soiltemp")]%>%
+  group_by(Date)%>%
+  summarise(across(c("B.soiltemp","E.soiltemp"), mean), .groups = 'drop')
+
+Soiltemp.long<-Soiltemp%>%
+  pivot_longer(cols=c("B.soiltemp","E.soiltemp"),names_to="Sensor",values_to="Soiltemp")%>%
+  mutate(Sensor=substr(Sensor,1L,1L))
+
+Rad.Airtemp<-inner_join(Airtemp.long,Radiation.long,by=c("Date"="Date","Sensor"="Sensor"))
+
+Soiltemp.Rad.Airtemp<-inner_join(Soiltemp.long,Rad.Airtemp,by=c("Date"="Date","Sensor"="Sensor"))
+```
+
+
+Airtemp vs radiation
+```{r}
+# locally weighted least squares regression (loess)
+ggplot(Rad.Airtemp,aes(x=Airtemp,y=Radiation,color=Sensor,fill=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  geom_smooth(method = "loess", size=2)+
+  labs(title="Solar Radiation vs Air Temp LOESS Sept 1 - Nov 31, 2022", 
+       x= "Air Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  scale_fill_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+
+## gppmisc to add labels of regression line equation and R2
+# linear
+  ggplot(Rad.Airtemp,aes(x=Airtemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(size=2) +
+  stat_poly_eq(aes(label = paste(after_stat(eq.label),after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Solar Radiation vs Air Temp Linear Model, Sept 1 - Nov 31, 2022", 
+       x= "Air Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+  
+# Quadratic
+ggplot(Rad.Airtemp,aes(x=Airtemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 2, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 2, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Solar Radiation vs Air Temp Quadratic Model, Sept 1 - Nov 31, 2022", 
+       x= "Air Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+# Cubic
+ggplot(Rad.Airtemp,aes(x=Airtemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 3, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 3, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Solar Radiation vs Air Temp Cubic Model, Sept 1 - Nov 31, 2022", 
+       x= "Air Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+```
+
+# Soil temp vs air temp
+```{r}
+
+# locally weighted least squares regression (loess)
+ggplot(Soiltemp.Rad.Airtemp,aes(x=Airtemp,y=Soiltemp,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  geom_smooth(method = "loess", size=2)+
+  labs(title="Soil Temp vs Air Temp LOESS Sept 1 - Nov 31, 2022", 
+       x= "Air Temperature (F)", y="Soil Temperatre (F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+
+## gppmisc to add labels of regression line equation and R2
+# linear
+  ggplot(Soiltemp.Rad.Airtemp,aes(x=Airtemp,y=Soiltemp,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(size=2) +
+  stat_poly_eq(aes(label = paste(after_stat(eq.label),after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soil Temp vs Air Temp Linear Model, Sept 1 - Nov 31, 2022", 
+       x= "Air Temperature (F)", y="Soil Temperatre (F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+  
+# Quadratic
+ ggplot(Soiltemp.Rad.Airtemp,aes(x=Airtemp,y=Soiltemp,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 2, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 2, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soil Temp vs Air Temp Quadratic Model, Sept 1 - Nov 31, 2022", 
+       x= "Air Temperature (F)", y="Soil Temperatre (F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+# Cubic
+ ggplot(Soiltemp.Rad.Airtemp,aes(x=Airtemp,y=Soiltemp,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 3, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 3, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soil Temp vs Air Temp Cubic Model, Sept 1 - Nov 31, 2022", 
+       x= "Air Temperature (F)", y="Soil Temperatre (F)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+```
+
+
+# Soil temp vs radiation
+```{r}
+
+# locally weighted least squares regression (loess)
+ggplot(Soiltemp.Rad.Airtemp,aes(x=Soiltemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  geom_smooth(method = "loess", size=2)+
+  labs(title="Soiltemp vs Radiation LOESS Sept 1 - Nov 31, 2022", 
+       x= "Soil Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+
+## gppmisc to add labels of regression line equation and R2
+# linear
+ggplot(Soiltemp.Rad.Airtemp,aes(x=Soiltemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(size=2) +
+  stat_poly_eq(aes(label = paste(after_stat(eq.label),after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soiltemp vs Radiation Linear Model, Sept 1 - Nov 31, 2022", 
+       x= "Soil Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+  
+# Quadratic
+ggplot(Soiltemp.Rad.Airtemp,aes(x=Soiltemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 2, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 2, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soiltemp vs Radiation Quadratic Model, Sept 1 - Nov 31, 2022", 
+       x= "Soil Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+# Cubic
+ggplot(Soiltemp.Rad.Airtemp,aes(x=Soiltemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  stat_poly_line(formula = y ~ poly(x, 3, raw = TRUE),size=2) +
+  stat_poly_eq(formula = y ~ poly(x, 3, raw = TRUE),aes(label = paste(after_stat(eq.label),
+                                                                      after_stat(rr.label), sep = "*\", \"*"))) +
+  labs(title="Soiltemp vs Radiation Cubic Model, Sept 1 - Nov 31, 2022", 
+       x= "Soil Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+```
+
+
+
+###################################################
+
+Summer - Using every observation (every 5 minutes)
+```{r}
+
+Airtemp<-summer2022[ , c("Date","A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp")]
+
+Airtemp.long<-Airtemp%>%
+  pivot_longer(cols=c("A.airtemp","B.airtemp","C.airtemp","D.airtemp","E.airtemp","F.airtemp","G.airtemp","N.airtemp"),names_to="Sensor",values_to="Airtemp")%>%
+  mutate(Sensor=substr(Sensor,1L,1L)) # extract only letter of Sensor
+
+Radiation<-summer2022[ , c("Date","B.rad","D.rad","E.rad","F.rad","G.rad","N.rad")]%>%
+  replace_with_na(replace=list(D.rad=-888.88))
+
+Radiation.long<-Radiation%>%
+  pivot_longer(cols=c("B.rad","D.rad","E.rad","F.rad","G.rad","N.rad"),names_to="Sensor",values_to="Radiation")%>%
+  mutate(Sensor=substr(Sensor,1L,1L))
+
+Rad.Airtemp<-inner_join(Airtemp.long,Radiation.long,by=c("Date"="Date","Sensor"="Sensor"))
+
+# linear model
+ggplot(Rad.Airtemp,aes(x=Airtemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  geom_smooth(method = "lm", se=T, fill = NA, size=2)+
+  labs(title="Solar Radiation vs Air Temp Sept 1 - Nov 31, 2022", 
+       x= "Air Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+
+# locally weighted least squares regression (loess)
+ggplot(Rad.Airtemp,aes(x=Airtemp,y=Radiation,color=Sensor,fill=Sensor))+
+  geom_line()+
+  geom_point()+
+  geom_smooth(method = "loess", se=T, fill = NA, size=2)+
+  labs(title="Solar Radiation vs Air Temp Sept 1 - Nov 31, 2022", 
+       x= "Air Temperature (F)", y="Solar Radiation (W/m^2)")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 0.8))+
+  scale_color_manual(values = c ("B"="gold1","C"="red","D"="darkorchid3","E"="navy","F"="maroon","G"="limegreen","N"="darkgreen"))+
+  theme1
+ 
+```
